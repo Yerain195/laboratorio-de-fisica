@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <title>Movimiento Rectilineo Uniforme</title>
+    <style>
+        body {
+            background-color: #afabab;
+        }
+        #velocidad-panel {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            background: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px #888;
+            z-index: 9999;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/xlsx-populate/browser/xlsx-populate.min.js"></script>
+
+
+</head>
+<body>
+    <div id="velocidad-panel">
+        <label for="vel-input" style="font-weight:bold;">Velocidad (m/s):</label>
+        <input id="vel-input" type="number" min="0.1" step="0.01" value="1" style="width: 80px;">
+    </div>
+    <canvas id="grafico" width="400" height="300" style="display: none;"></canvas>
+    <a-scene>
+        <a-assets>
+            <img id="piso" src="Imagenes/piso2.jpg">
+            <a-asset-item id="modeloriel" src="modelos/soportemru.glb"></a-asset-item>
+            <a-asset-item id="modelocarrito" src="modelos/carritomru.glb"></a-asset-item>
+            <a-asset-item id="modelomaquina" src="modelos\maquina_de_aire.glb"></a-asset-item>
+            <a-asset-item id="modelo-vernier" src="modelos\vernier.glb"></a-asset-item>
+            <a-asset-item id="estante" src="modelos/estantemru.glb"></a-asset-item>
+            <a-asset-item id="ventana" src="modelos/ventana1.glb"></a-asset-item>
+            <a-asset-item id="modelo-docente" src="modelos\inge.glb"></a-asset-item>
+            <a-asset-item id="modeloPuerta" src="modelos/puerta.glb"></a-asset-item>
+            <a-asset-item id="modelomesa" src="modelos/mesa.glb"></a-asset-item>
+            <a-asset-item id="modelosilla" src="modelos/silla.glb"></a-asset-item>
+            <a-asset-item id="componentes1" src="modelos/L.F. Sensor de aceleracion.glb"></a-asset-item>
+            <a-asset-item id="componentes2" src="modelos/L.F. Sensor de Luz.glb"></a-asset-item>
+
+        </a-assets>
+        <!-- Paredes-->
+        <a-box color="#cccccc" width="80" height="30" depth="0.2" position="30.824 6 -90" scale="1.220 1.000 1.000"></a-box><!-- arriba-->
+        <a-box color="#cccccc" width="80" height="30" depth="0.2" position="30.824 6 30" scale="1.220 1.000 1.000"></a-box><!-- abajo-->
+        <a-box color="#cccccc" width="0.2" height="30" depth="120" position="79.052 6 -30" ></a-box><!-- derecha-->
+        <a-box color="#cccccc" width="0.2" height="30" depth="120" position="-17.5 6 -30"></a-box><!-- izquierda-->
+        <!-- Piso-->
+        <a-plane
+        rotation="-90 0 0"
+        position="30.321 -8 -34.952"
+        src="#piso"
+        scale="1.240 1.100 1.000"
+        width="80"
+        height="120"
+        repeat="4 4"
+        ></a-plane>
+        <!-- Puertas-->
+
+         <a-entity 
+         gltf-model="#modeloPuerta"
+         position="4.610 2.792 29.769"
+         scale="9.5 11 5">
+
+         </a-entity>
+         <a-entity 
+         gltf-model="#modeloPuerta"
+         position="-5.207 2.792 29.769"
+         scale="9.5 11 5">
+
+         </a-entity>
+         <!-- sillas-->
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="-2.206 -4.080 -11.908"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="4.623 -4.080 -11.908"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="44.564 -4.080 -11.908"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="51.804 -4.080 -11.908"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="-2.206 -4.080 -37.934"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="4.623 -4.080 -37.934"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="44.564 -4.080 -37.934"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="51.804 -4.080 -37.934"
+         scale="4 4 4">
+         </a-entity>
+        <!-- AVATAR DOCENTE -->
+       <a-entity id="docente-avatar" gltf-model="#modelo-docente" scale="14 14 14" position="68.416 -2 22" rotation="0 90 0"></a-entity>
+
+      
+
+      <!-- PANEL DE DIÁLOGO -->
+      <a-entity id="panel-dialogo" position="60.259 8 29.5" rotation="0 180 0">
+        <a-plane width="22" height="13" color="#222"></a-plane>
+        <a-text id="texto-dialogo" value="Hola, ¿ en que puedo ayudarte ?" color="#FFF" position="0 0 0.01" width="20" align="center"></a-text>
+      </a-entity>
+
+      
+      <a-entity id="boton-docente" position="59.915 5 29.5" rotation="0 180 0">
+        <a-box width="5" height="2" depth="2" color="#00CFFF"></a-box>
+        <a-text value="Hablar con el Ingeniero" align="center" color="#000000" position="0 0 1.2" rotation="0 0 0" width="10"></a-text>
+      </a-entity>
+
+      <!-- PANEL DE PREGUNTAS -->
+      
+      <a-entity id="panel-preguntas" position="78.649 5 20" rotation="0 270 0" visible="false">
+        <a-plane width="15" height="18" color="#ffffff" opacity="0.9"></a-plane>
+
+        <a-text value="Selecciona una pregunta :" position="0 0.7 0.01" align="center" width="2" color="#000"></a-text>
+
+        <a-entity id="opcion1" question-id="1" position="0 5 0.02">
+          <a-plane width="12" height="2.5" color="#EEE" opacity="0.8"></a-plane>
+          <a-text value="¿Que es MRU?" align="center" width="15" color="#000" position="0 0 0.01"></a-text>
+        </a-entity>
+
+        <a-entity id="opcion2" question-id="2" position="0 2 0.02">
+          <a-plane width="12" height="2.5" color="#EEE" opacity="0.8"></a-plane>
+          <a-text value="¿Cuál es la fórmula principal del MRU?" align="center" width="15" color="#000" position="0 0 0.01"></a-text>
+        </a-entity>
+
+        <a-entity id="opcion3" question-id="3" position="0 -1 0.02">
+          <a-plane width="12" height="2.5" color="#EEE" opacity="0.8"></a-plane>
+          <a-text value="¿Cómo se calcula la velocidad en el MRU?" align="center" width="15" color="#000" position="0 0 0.01"></a-text>
+        </a-entity>
+
+        <a-entity id="opcion4" question-id="4" position="0 -4 0.02">
+          <a-plane width="12" height="2.5" color="#EEE" opacity="0.8"></a-plane>
+          <a-text value="¿Qué representa la pendiente en una gráfica de posición vs. tiempo?" align="center" width="15" color="#000" position="0 0 0.01"></a-text>
+        </a-entity>
+
+        <a-entity id="opcionSalir" question-id="exit" position="0 -7 0.02">
+          <a-plane width="12" height="2.5" color="#DDD" opacity="0.8"></a-plane>
+          <a-text value="Esta bien, gracias Inge" align="center" width="15" color="#666" position="0 0 0.01"></a-text>
+        </a-entity>
+      </a-entity>
+        <!-- MESAS-->
+         <a-entity
+         gltf-model="#modelomesa" 
+         scale="9 5 8"
+         position="0.759 -5.366 -2">
+         </a-entity>
+         <a-entity
+         gltf-model="#modelomesa" 
+         scale="9 5 8"
+         position="0.759 -5.263 -26.163">
+         </a-entity>
+         <a-entity
+         gltf-model="#modelomesa" 
+         scale="9 5 8"
+         position="0.759 -5.263 -53.931">
+         </a-entity>
+         <a-entity
+         gltf-model="#modelomesa" 
+         scale="9 5 8"
+         position="46.643 -5.263 -2">
+         </a-entity>
+         <a-entity
+         gltf-model="#modelomesa" 
+         scale="9 5 8"
+         position="46.643 -5.263 -53.931">
+         </a-entity>
+         <a-entity
+         gltf-model="#modelomesa" 
+         scale="9 5 8"
+         position="46.643 -5.263 -26.163">
+         </a-entity>
+         <!-- barraroja-->
+        <a-box
+        color="#F63030"
+        width="12"
+        height="0.6"
+        depth="0.6"
+        position="0 -2.1 -2"
+        >
+        </a-box>
+        <a-box
+        color="#111111"
+        width="12"
+        height="0.61"
+        depth="0.61"
+        position="0 -2.1 -2"
+        wireframe="true"
+        >
+        </a-box> 
+        <!-- cajitasblancascon borde negro-->
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="-5.5 -2.6 -2"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="-5.5 -2.6 -2">
+        </a-box>
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="5.5 -2.6 -2"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="5.5 -2.6 -2">
+        </a-box>
+         <!-- barraroja-->
+        <a-box
+        color="#F63030"
+        width="12"
+        height="0.6"
+        depth="0.6"
+        position="0 -2.1 -26.030"
+        >
+        </a-box>
+        <a-box
+        color="#111111"
+        width="12"
+        height="0.61"
+        depth="0.61"
+        position="0 -2.1 -26.030"
+        wireframe="true"
+        >
+        </a-box> 
+        <!-- cajitasblancascon borde negro-->
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="-5.5 -2.6 -26.030"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="-5.5 -2.6 -26.030">
+        </a-box>
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="5.5 -2.6 -26.030"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="5.5 -2.6 -26.030">
+        </a-box>
+        <!-- barraroja-->
+        <a-box
+        color="#F63030"
+        width="12"
+        height="0.6"
+        depth="0.6"
+        position="46.767 -2.1 -2"
+        >
+        </a-box>
+        <a-box
+        color="#111111"
+        width="12"
+        height="0.61"
+        depth="0.61"
+        position="46.767 -2.1 -2"
+        wireframe="true"
+        >
+        </a-box> 
+        <!-- cajitasblancascon borde negro-->
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="41.4 -2.6 -2"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="41.4 -2.6 -2">
+        </a-box>
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="52.4 -2.6 -2"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="52.4 -2.6 -2">
+        </a-box>
+        <!-- barraroja-->
+        <a-box
+        color="#F63030"
+        width="12"
+        height="0.6"
+        depth="0.6"
+        position="46.767 -2.1 -26.030"
+        >
+        </a-box>
+        <a-box
+        color="#111111"
+        width="12"
+        height="0.61"
+        depth="0.61"
+        position="46.767 -2.1 -26.030"
+        wireframe="true"
+        >
+        </a-box> 
+        <!-- cajitasblancascon borde negro-->
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="41.4 -2.6 -26.030"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="41.4 -2.6 -26.030">
+        </a-box>
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="52.4 -2.6 -26.030"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="52.4 -2.6 -26.030">
+        </a-box>
+
+
+        <!-- plataforma MRU-->
+        <a-entity 
+        gltf-model="#modeloriel" 
+        rotation="0 -180 0"
+        position="0 -1.2 -2" 
+        scale="2.1 2.1 2.1"></a-entity>
+        <a-entity 
+        gltf-model="#modeloriel" 
+        rotation="0 -180 0"
+        position="0 -1.2 -26.030" 
+        scale="2.1 2.1 2.1"></a-entity>
+        <a-entity 
+        gltf-model="#modeloriel" 
+        rotation="0 -180 0"
+        position="46.767 -1.2 -2" 
+        scale="2.1 2.1 2.1"></a-entity>
+        <a-entity 
+        gltf-model="#modeloriel" 
+        rotation="0 -180 0"
+        position="46.767 -1.2 -26.030" 
+        scale="2.1 2.1 2.1"></a-entity>
+        <!-- estante 1-->
+        <a-entity 
+        gltf-model="#estante" 
+        rotation="0 -90 0"
+        position="98.692 -7 0" 
+        scale="1 0.7 1"></a-entity>
+        <!-- estante 2-->
+        <a-entity 
+        gltf-model="#estante" 
+        rotation="0 -90 0"
+        position="98.692 -7 -25" 
+        scale="1 0.7 1"></a-entity>
+        <!-- estante 3-->
+        <a-entity 
+        gltf-model="#estante" 
+        rotation="0 -90 0"
+        position="98.692 -7 -50" 
+        scale="1 0.7 1"></a-entity>
+        <!-- estante 4-->
+        <a-entity 
+        gltf-model="#estante" 
+        rotation="0 -90 0"
+        position="98.692 -7 -75" 
+        scale="1 0.7 1"></a-entity>
+        <!-- componentes-->
+        <a-entity 
+         gltf-model="#componentes1"
+         position="76.005 0 1"
+         scale="2 2 2">
+         </a-entity>
+        <a-entity 
+         gltf-model="#componentes1"
+         position="76.005 0 -2"
+         scale="2 2 2">
+         </a-entity>
+         <a-entity 
+         gltf-model="#componentes2"
+         position="76.005 0 5"
+         scale="2 2 2">
+         </a-entity>
+        <a-entity 
+         gltf-model="#componentes2"
+         position="76.005 0 8"
+         scale="2 2 2">
+         </a-entity>
+
+
+        <!-- ventana-->
+        <a-entity 
+        gltf-model="#ventana" 
+        rotation="-180 0 0"
+        position="0 15 -90" 
+        scale="6 7 7"></a-entity>
+        <!-- ventana2-->
+        <a-entity 
+        gltf-model="#ventana" 
+        rotation="-180 0 0"
+        position="20 15 -90" 
+        scale="6 7 7"></a-entity>
+        <!-- ventana3-->
+        <a-entity 
+        gltf-model="#ventana" 
+        rotation="-180 0 0"
+        position="40 15 -90" 
+        scale="5 7 7"></a-entity>
+        <!-- ventana3-->
+        <a-entity 
+        gltf-model="#ventana" 
+        rotation="-180 0 0"
+        position="49 15 -90" 
+        scale="5 7 7">
+        </a-entity>
+
+        <!-- maquina de aire MRU-->
+        <a-entity 
+        id="maquinaaire"
+        gltf-model="#modelomaquina" 
+        position="-5.6 -1.5 0" 
+        scale="1.5 2.3 2.3">
+        </a-entity>
+        <a-box color="#502c20"
+        width="2"
+        height="0.4"
+        depth="2"position="-5.6 -2.5 0" >
+        </a-box>     
+        <!-- CARRITO 1 -->
+        <a-entity 
+        id="carrito1"
+        gltf-model="#modelocarrito" 
+        position="-4 -1 -1.5" 
+        scale="0.55 0.55 0.55"
+        rotation="0 90 0"
+        ></a-entity>
+        
+        <!-- FOTOPUERTAS -->
+        <a-box id="fotopuerta1" position="-3.7 -0 -1.8" width="0.05" height="0.5" depth="0.01" color="black"></a-box>
+        <a-box id="fotopuerta2" position="4.5 -0 -1.8" width="0.05" height="0.5" depth="0.01" color="black"></a-box>
+
+        <a-entity id="vernier" position="2 -2.5 1">
+            <a-entity 
+            gltf-model="#modelo-vernier" 
+            rotation="0 270 0"
+            scale="1 1 1"></a-entity>
+            <a-plane 
+            id="pantalla" 
+            width="0.5" 
+            height="0.25" 
+            position="0 0 0.143" 
+            color="#222">
+            <a-text 
+                id="resultado-texto" 
+                value="Resultados: --" 
+                align="center" 
+                color="lime" 
+                width="0.8"
+                position="0 0 0.01">
+            </a-text>
+            </a-plane>
+        </a-entity>
+        <!-- PIZARRÓN -->
+        <a-entity id="pizarron" position="30.291 6 29.5" rotation="-180 0 180">
+            <a-plane width="25" height="15" color="#919191"></a-plane>
+            <a-text id="pizarron-titulo" value="Resultados del Experimento" color="#000000" position="0.5 6 0.02" align="center" width="23"></a-text>
+            <a-text id="linea3" value="Velocidad inicial: -- m/s" color="#000000" position="-11 4 0.02" width="21"></a-text>            
+            <a-text id="linea5" value="Tiempo estimado: -- s" color="#000000" position="-11 2 0.02" width="21"></a-text>
+            <a-text id="linea6" value="Distancia: -- m" color="#000000" position="-11 0 0.02" width="21"></a-text>
+            <a-text id="linea7" value="Ecuacion: x = x₀ + vt: -- (m/s)" color="#8cbbf0" position="-11 -2 0.01" width="21"></a-text>
+        </a-entity>
+        <a-image id="grafico-mru" position="23.738 6 29.2" width="10" height="8" rotation="-180 0 180"></a-image>
+        <a-box
+        color="#502c20"
+        width="0.71"
+        height="15"
+        depth="0.71"
+        position="43.204 6 29.5"
+        ></a-box>
+        <a-box
+        color="#502c20"
+        width="0.71"
+        height="15"
+        depth="0.71"
+        position="17.792 6 29.5"
+        ></a-box>
+        <a-box
+        color="#502c20"
+        width="0.71"
+        height="25.5"
+        depth="0.71"
+        position="30.689 -1.5 29.5"
+        rotation="-90 -90 0"
+        ></a-box>
+        <a-box
+        color="#502c20"
+        width="0.71"
+        height="25.5"
+        depth="0.71"
+        position="30.689 13.5 29.5"
+        rotation="-90 -90 0"
+        ></a-box>
+        
+
+        
+       
+        
+        <!-- ...antes de los botones MRU... -->
+        
+        <!-- ...resto del código... -->
+        <!-- Botones MRU-->
+        <a-box id="boton-encender" position="-5 -1.5 0" width="0.5" height="0.5" rotation ="0 90 0" depth="0.5" color="#4CC3D9"></a-box>
+        <a-box id="boton-reiniciar" position="-17.1 2 -4" width="3" height="3" rotation="0 270 0" depth="0.5" color="#FFCC00"></a-box>
+        <a-text value="Reiniciar" position="-17.1 0 -4" align="center" rotation="0 -270 0" color="black" width="10"></a-text>
+        <a-box id="boton-detener" position="-17.1 2 2" width="3" height="3" rotation="0 270 0" depth="0.5" color="#FF6666"></a-box>
+        <a-text value="Detener" position="-17.1 0 2" align="center" rotation="0 -270 0" color="black" width="10"></a-text>
+
+        
+
+
+        <!-- Funciones-->
+        <script>
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const carrito = document.querySelector('#carrito1');
+            const resultadoTexto = document.querySelector('#resultado-texto');
+
+            const linea3 = document.querySelector('#linea3');
+            const linea5 = document.querySelector('#linea5');
+            const linea6 = document.querySelector('#linea6');
+            const linea7 = document.querySelector('#linea7');
+
+            const botonEncender = document.querySelector('#boton-encender');
+            const botonDetener = document.querySelector('#boton-detener');
+            const botonReiniciar = document.querySelector('#boton-reiniciar');
+
+            const inputVelocidad = document.querySelector('#vel-input');
+
+            let inicioDetectado = false;
+            let finDetectado = false;
+            let tiempoInicio = 0;
+            let tiempoFin = 0;
+            let animacionActiva = false;
+
+            const distanciaFotopuertas = 2; // metros entre fotopuertas
+
+            function limpiarAnimaciones() {
+                carrito.removeAttribute('animation');
+                inicioDetectado = false;
+                finDetectado = false;
+            }
+
+            botonEncender.addEventListener('click', () => {
+                if (animacionActiva) return;
+
+                const velocidad = parseFloat(inputVelocidad.value);
+                if (isNaN(velocidad) || velocidad <= 0) {
+                    alert("Por favor, introduce una velocidad válida mayor a 0.");
+                    return;
+                }
+
+                animacionActiva = true;
+                carrito.setAttribute('position', '-4 -1 -1.5'); // posición inicial
+
+                const distancia = 8.5; // de -4 a 4.5 = 8.5 metros
+                const duracion = (distancia / velocidad) * 1000; // en milisegundos
+
+                carrito.setAttribute('animation', {
+                    property: 'position',
+                    to: '4.5 -1 -1.5',
+                    dur: duracion,
+                    easing: 'linear'
+                });
+
+                resultadoTexto.setAttribute('value', 'Midiendo velocidad...');
+                linea3.setAttribute('value', `Velocidad ingresada: ${velocidad.toFixed(2)} m/s`);
+                linea5.setAttribute('value', `Tiempo estimado: ${(distancia / velocidad).toFixed(2)} s`);
+                linea6.setAttribute('value', `Distancia: ${distancia.toFixed(2)} m`);
+                linea7.setAttribute('value', `Ecuación: x = x₀ + vt`);
+
+                dibujarGraficoMRU(velocidad, distancia / velocidad);
+
+                const intervalo = setInterval(() => {
+                    const posX = carrito.object3D.position.x;
+
+                    if (!inicioDetectado && posX >= 0) {
+                        tiempoInicio = performance.now();
+                        inicioDetectado = true;
+                    }
+
+                    if (inicioDetectado && !finDetectado && posX >= 2) {
+                        tiempoFin = performance.now();
+                        finDetectado = true;
+
+                        const tiempoSegundos = (tiempoFin - tiempoInicio) / 1000;
+                        const velocidadCalculada = distanciaFotopuertas / tiempoSegundos;
+
+                        resultadoTexto.setAttribute('value', `Velocidad ≈ ${velocidadCalculada.toFixed(2)} m/s`);
+                        // Mostrar ambas velocidades en el pizarrón
+                        linea3.setAttribute('value', `Velocidad ingresada: ${velocidad.toFixed(2)} m/s | Medida: ${velocidadCalculada.toFixed(2)} m/s`);
+                        linea5.setAttribute('value', `Tiempo medido: ${tiempoSegundos.toFixed(2)} s`);
+                        linea6.setAttribute('value', `Distancia: ${distanciaFotopuertas.toFixed(2)} m`);
+                        linea7.setAttribute('value', `Ecuación: x = x₀ + vt: ${velocidadCalculada.toFixed(2)}·t`);
+
+                        // Actualizar la gráfica con la velocidad ingresada y medida
+                        dibujarGraficoMRU(velocidad, tiempoSegundos);
+
+                        clearInterval(intervalo);
+                    }
+
+                    if (posX > 5 || finDetectado) {
+                        clearInterval(intervalo);
+                    }
+                }, 50);
+            });
+
+            botonDetener.addEventListener('click', () => {
+                limpiarAnimaciones();
+                animacionActiva = false;
+                resultadoTexto.setAttribute('value', 'Movimiento detenido');
+            });
+
+            botonReiniciar.addEventListener('click', () => {
+                limpiarAnimaciones();
+                carrito.setAttribute('position', '-2 -1 -5');
+                animacionActiva = false;
+                resultadoTexto.setAttribute('value', 'Resultados: --');
+                linea3.setAttribute('value', 'Velocidad inicial: -- m/s');
+                linea5.setAttribute('value', 'Tiempo estimado: -- s');
+                linea6.setAttribute('value', 'Distancia: -- m');
+                linea7.setAttribute('value', 'Ecuación: x = x₀ + vt: -- (m/s)');
+            });
+        });
+        </script>
+        <!-- Grafico MRU-->
+        
+        <script>
+        
+        let datosTiempos = [];
+        let datosPosiciones = [];
+
+        function dibujarGraficoMRU(velocidad, tiempoTotal) {
+            const canvas = document.getElementById('grafico');
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar ejes
+            ctx.beginPath();
+            ctx.moveTo(40, 260);
+            ctx.lineTo(380, 260);
+            ctx.moveTo(40, 260);
+            ctx.lineTo(40, 20);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Marcas y números eje X
+            ctx.fillStyle = '#000';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            const pasosX = 5;
+            for (let i = 0; i <= pasosX; i++) {
+                const t = i * tiempoTotal / pasosX;
+                const xCanvas = 40 + (t / tiempoTotal) * 340;
+                ctx.beginPath();
+                ctx.moveTo(xCanvas, 260);
+                ctx.lineTo(xCanvas, 255);
+                ctx.stroke();
+                ctx.fillText(t.toFixed(1), xCanvas, 265);
+            }
+            ctx.fillText('Tiempo (s)', 210, 280);
+
+            // Marcas y números eje Y
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            const maxDistancia = velocidad * tiempoTotal;
+            const pasosY = 5;
+            for (let i = 0; i <= pasosY; i++) {
+                const d = i * maxDistancia / pasosY;
+                const yCanvas = 260 - (d / maxDistancia) * 240;
+                ctx.beginPath();
+                ctx.moveTo(40, yCanvas);
+                ctx.lineTo(35, yCanvas);
+                ctx.stroke();
+                ctx.fillText(d.toFixed(1), 30, yCanvas);
+            }
+            ctx.fillText('Posición (m)', 10, 140);
+
+            // Dibujar línea MRU y guardar datos
+            ctx.beginPath();
+            ctx.moveTo(40, 260);
+
+            const pasos = 50;
+            datosTiempos = [];
+            datosPosiciones = [];
+
+            for (let i = 0; i <= pasos; i++) {
+                let t = i * tiempoTotal / pasos;
+                let x = velocidad * t;
+
+                // Escala para dibujar
+                let xCanvas = 40 + (t / tiempoTotal) * 340;
+                let yCanvas = 260 - (x / maxDistancia) * 240;
+
+                ctx.lineTo(xCanvas, yCanvas);
+
+                // Guardar datos para exportar
+                datosTiempos.push(t);
+                datosPosiciones.push(x);
+            }
+
+            ctx.strokeStyle = '#00f';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Actualizar textura o imagen si usas A-Frame (opcional)
+            const image = document.getElementById('grafico-mru');
+            if(image) {
+            image.setAttribute('src', canvas.toDataURL());
+            }
+        }
+        
+
+        const scene = document.querySelector('a-scene');
+        const camera = scene.querySelector('[camera]');
+        const interactables = document.querySelectorAll('.interactable');
+
+        let grabbedEl = null;
+        let offset = new THREE.Vector3();
+        let plane = new THREE.Plane();
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+
+        // Detectar click izquierdo para agarrar
+        window.addEventListener('mousedown', e=>{
+            if(e.button!==0) return; // solo click izquierdo
+
+            // convertir mouse a NDC
+            mouse.x = (e.clientX / window.innerWidth)*2 - 1;
+            mouse.y = - (e.clientY / window.innerHeight)*2 + 1;
+
+            raycaster.setFromCamera(mouse, camera.getObject3D('camera'));
+
+            const intersects = raycaster.intersectObjects(Array.from(interactables).map(el=>el.object3D), true);
+            if(intersects.length>0){
+            grabbedEl = intersects[0].object.el;
+
+            // crear plano paralelo a cámara para arrastre
+            plane.setFromNormalAndCoplanarPoint(
+                new THREE.Vector3(0,0,1).applyQuaternion(camera.object3D.quaternion),
+                intersects[0].point
+            );
+
+            offset.copy(intersects[0].point).sub(grabbedEl.object3D.position);
+            }
+        });
+
+        // Soltar objeto
+        window.addEventListener('mouseup', e=>{
+            if(e.button!==0) return;
+            grabbedEl = null;
+        });
+
+        // Mover objeto mientras se arrastra
+        window.addEventListener('mousemove', e=>{
+            if(!grabbedEl) return;
+
+            mouse.x = (e.clientX / window.innerWidth)*2 - 1;
+            mouse.y = - (e.clientY / window.innerHeight)*2 + 1;
+
+            raycaster.setFromCamera(mouse, camera.getObject3D('camera'));
+
+            const intersectionPoint = new THREE.Vector3();
+            raycaster.ray.intersectPlane(plane, intersectionPoint);
+
+            if(intersectionPoint){
+            grabbedEl.object3D.position.copy(intersectionPoint.sub(offset));
+            }
+        });
+        
+
+        </script>
+        
+        
+        
+
+        <script>
+        // SECCIÓN AVATAR DOCENTE
+        const botonDocente = document.querySelector('#boton-docente');
+        const panelPreguntas = document.querySelector('#panel-preguntas');
+        const textoDialogo = document.querySelector('#texto-dialogo');
+
+        const respuestas = {
+            "1": "Es un tipo de movimiento en línea recta donde un objeto se desplaza a velocidad constante, sin aceleración.",
+            "2": "La fórmula es: d = v × t, donde d es la distancia, v la velocidad y t el tiempo.",
+            "3": "Se calcula dividiendo la distancia recorrida entre el tiempo: v = d / t.",
+            "4": "Representa la velocidad del objeto; una pendiente constante indica velocidad constante.",
+        };
+
+        const despedidas = [
+            "Muy bien, continúa con el experimento.",
+            "Listo, seguimos luego.",
+            "Hasta luego, buen trabajo."
+        ];
+
+        botonDocente.addEventListener('click', () => {
+            panelPreguntas.setAttribute('visible', true);
+            textoDialogo.setAttribute('value', "Hola, ¿qué deseas saber?");
+        });
+
+        ['opcion1', 'opcion2', 'opcion3', 'opcion4', 'opcionSalir'].forEach(id => {
+            const opcion = document.querySelector(`#${id}`);
+            const questionId = opcion.getAttribute('question-id');
+
+            opcion.addEventListener('click', () => {
+            if (questionId === 'exit') {
+                const despedida = despedidas[Math.floor(Math.random() * despedidas.length)];
+                textoDialogo.setAttribute('value', despedida);
+                setTimeout(() => panelPreguntas.setAttribute('visible', false), 1500);
+            } else {
+                textoDialogo.setAttribute('value', respuestas[questionId]);
+            }
+            });
+        });
+        </script>
+
+
+        <!-- Cámara con cursor -->
+        <a-entity position="0 1.6 0">
+            <a-entity 
+                camera 
+                look-controls 
+                wasd-controls 
+                position="0 0 0">
+                <a-cursor></a-cursor>
+            </a-entity>
+        </a-entity>
+
+
+        
+        
+
+
+        <!-- Escenario-->
+        <a-light type="ambient" color="#FFFFFF" intensity="0.6"></a-light>
+        <a-light type="directional" color="#FFFFFF" intensity="1.5" position="0 -6 -6"></a-light>ss
+        <a-light type="directional" color="#FFFFFF" intensity="0.5" position="0 10 10"></a-light>s
+        <a-sky color="#ddddff"></a-sky>
+        
+    </a-scene>
+    
+</body>
+</html>

@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <title>Colisiones Elásticas</title>
+    <style>
+        body {
+            background-color: #afabab;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Panel de datos mejorado con mejor proporción */
+        #panel-datos {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #F3F3E0 0%, #CBDCEB 100%);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+            border: 3px solid #133E87;
+            width: 260px;
+            backdrop-filter: blur(10px);
+        }
+
+        #panel-datos h3 {
+            margin: 0 0 16px 0;
+            color: #133E87;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            border-bottom: 2px solid #608BC1;
+            padding-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #panel-datos label {
+            font-weight: 600;
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 6px;
+            color: #133E87;
+            font-size: 13px;
+            letter-spacing: 0.3px;
+        }
+
+        #panel-datos input {
+            width: 100%;
+            margin-bottom: 4px;
+            padding: 10px 12px;
+            border: 2px solid #608BC1;
+            border-radius: 6px;
+            background-color: #FFFFFF;
+            color: #133E87;
+            font-weight: 600;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        #panel-datos input:focus {
+            outline: none;
+            border-color: #133E87;
+            box-shadow: 0 0 8px rgba(19, 62, 135, 0.4);
+            background-color: #CBDCEB;
+            transform: translateY(-1px);
+        }
+
+        #panel-datos input:hover {
+            border-color: #133E87;
+        }
+
+        #boton-descargar {
+            display: none;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #133E87 0%, #608BC1 100%);
+            color: #F3F3E0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(19, 62, 135, 0.3);
+        }
+
+        #boton-descargar:hover {
+            background: linear-gradient(135deg, #608BC1 0%, #133E87 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(19, 62, 135, 0.4);
+        }
+
+        #boton-descargar:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 8px rgba(19, 62, 135, 0.3);
+        }
+
+        /* Efecto de enfoque mejorado para inputs tipo number */
+        #panel-datos input[type="number"]::-webkit-inner-spin-button,
+        #panel-datos input[type="number"]::-webkit-outer-spin-button {
+            opacity: 1;
+            height: 30px;
+        }
+
+        /* Responsive para pantallas pequeñas */
+        @media (max-width: 768px) {
+            #panel-datos {
+                width: 220px;
+                padding: 16px;
+                top: 10px;
+                left: 10px;
+            }
+            
+            #panel-datos h3 {
+                font-size: 16px;
+            }
+            
+            #panel-datos label {
+                font-size: 12px;
+            }
+            
+            #panel-datos input {
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+            
+            #boton-descargar {
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+        }
+        
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/xlsx-populate/browser/xlsx-populate.min.js"></script>
+    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-super-hands-component@4.0.5/dist/aframe-super-hands-component.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <!-- Agrega esto en tu sección <head> -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="exportador-excel-colision.js"></script>
+</head>
+<body>
+    <div id="panel-datos">
+        <label for="v1-input">Velocidad Carrito 1 (m/s):</label>
+        <input id="v1-input" type="number" step="0.1" value="2">
+        
+        <label for="m1-input">Masa Carrito 1 (kg):</label>
+        <input id="m1-input" type="number" step="0.1" value="1">
+        
+        <label for="v2-input">Velocidad Carrito 2 (m/s):</label>
+        <input id="v2-input" type="number" step="0.1" value="-1.5">
+        
+        <label for="m2-input">Masa Carrito 2 (kg):</label>
+        <input id="m2-input" type="number" step="0.1" value="1">
+        
+        <button id="boton-descargar">Descargar Excel</button>
+    </div>
+    <canvas id="grafico" width="400" height="300" style="display: none;"></canvas>
+    <a-scene>
+        <a-assets>
+            <img id="piso" src="Imagenes/piso2.jpg">
+            <a-asset-item id="modeloriel" src="modelos/soportemru.glb"></a-asset-item>
+            <a-asset-item id="modelocarrito" src="modelos/carrito1.glb"></a-asset-item>
+            <a-asset-item id="modelomaquina" src="modelos\maquina_de_aire.glb"></a-asset-item>
+            <a-asset-item id="modelo-vernier" src="modelos\vernier.glb"></a-asset-item>
+            <a-asset-item id="estante" src="modelos/estantemru.glb"></a-asset-item>
+            <a-asset-item id="ventana" src="modelos/ventana1.glb"></a-asset-item>
+            <a-asset-item id="modelo-docente" src="modelos\inge.glb"></a-asset-item>
+            <a-asset-item id="modeloPuerta" src="modelos/puerta.glb"></a-asset-item>
+            <a-asset-item id="modelomesa" src="modelos/mesa.glb"></a-asset-item>
+            <a-asset-item id="modelosilla" src="modelos/silla.glb"></a-asset-item>
+            <a-asset-item id="componentes1" src="modelos/L.F. Sensor de aceleracion.glb"></a-asset-item>
+            <a-asset-item id="componentes2" src="modelos/L.F. Sensor de Luz.glb"></a-asset-item>
+        </a-assets>
+        <!-- Paredes-->
+        <a-box color="#cccccc" width="80" height="30" depth="0.2" position="30.824 6 -90" scale="1.220 1.000 1.000"></a-box>
+        <a-box color="#cccccc" width="80" height="30" depth="0.2" position="30.824 6 30" scale="1.220 1.000 1.000"></a-box>
+        <a-box color="#cccccc" width="0.2" height="30" depth="120" position="79.052 6 -30" ></a-box>
+        <a-box color="#cccccc" width="0.2" height="30" depth="120" position="-17.5 6 -30"></a-box>
+        <!-- Piso-->
+        <a-plane
+        rotation="-90 0 0"
+        position="30.321 -8 -34.952"
+        src="#piso"
+        scale="1.240 1.100 1.000"
+        width="80"
+        height="120"
+        repeat="4 4"
+        ></a-plane>
+        <!-- Puertas-->
+         <a-entity 
+         gltf-model="#modeloPuerta"
+         position="4.610 2.792 29.769"
+         scale="9.5 11 5">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modeloPuerta"
+         position="-5.207 2.792 29.769"
+         scale="9.5 11 5">
+         </a-entity>
+         <!-- sillas-->
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="-2.206 -4.080 -11.908"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="4.623 -4.080 -11.908"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="44.564 -4.080 -11.908"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="51.804 -4.080 -11.908"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="-2.206 -4.080 -37.934"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="4.623 -4.080 -37.934"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="44.564 -4.080 -37.934"
+         scale="4 4 4">
+         </a-entity>
+         <a-entity 
+         gltf-model="#modelosilla"
+         position="51.804 -4.080 -37.934"
+         scale="4 4 4">
+         </a-entity>
+        <!-- AVATAR DOCENTE -->
+       <a-entity id="docente-avatar" gltf-model="#modelo-docente" scale="14 14 14" position="68.416 -2 22" rotation="0 90 0"></a-entity>
+
+      <!-- PANEL DE DIÁLOGO -->
+      <a-entity id="panel-dialogo" position="60.259 8 29.5" rotation="0 180 0">
+        <a-plane width="22" height="13" color="#222"></a-plane>
+        <a-text id="texto-dialogo" value="Hola, ¿ en que puedo ayudarte ?" color="#FFF" position="0 0 0.01" width="20" align="center"></a-text>
+      </a-entity>
+
+      <a-entity id="boton-docente" position="59.915 5 29.5" rotation="0 180 0">
+        <a-box width="5" height="2" depth="2" color="#00CFFF"></a-box>
+        <a-text value="Hablar con el Ingeniero" align="center" color="#000000" position="0 0 1.2" rotation="0 0 0" width="10"></a-text>
+      </a-entity>
+
+      <!-- PANEL DE PREGUNTAS -->
+      <a-entity id="panel-preguntas" position="78.649 5 20" rotation="0 270 0" visible="false">
+        <a-plane width="15" height="18" color="#ffffff" opacity="0.9"></a-plane>
+        <a-text value="Selecciona una pregunta :" position="0 0.7 0.01" align="center" width="2" color="#000"></a-text>
+
+        <a-entity id="opcion1" question-id="1" position="0 5 0.02">
+          <a-plane width="12" height="2.5" color="#EEE" opacity="0.8"></a-plane>
+          <a-text value="¿Que es una colision elastica?" align="center" width="15" color="#000" position="0 0 0.01"></a-text>
+        </a-entity>
+
+        <a-entity id="opcion2" question-id="2" position="0 2 0.02">
+          <a-plane width="12" height="2.5" color="#EEE" opacity="0.8"></a-plane>
+          <a-text value="¿Que se conserva en una colision elastica?" align="center" width="15" color="#000" position="0 0 0.01"></a-text>
+        </a-entity>
+
+        <a-entity id="opcion3" question-id="3" position="0 -1 0.02">
+          <a-plane width="12" height="2.5" color="#EEE" opacity="0.8"></a-plane>
+          <a-text value="¿Como se calculan las velocidades finales?" align="center" width="15" color="#000" position="0 0 0.01"></a-text>
+        </a-entity>
+
+        <a-entity id="opcion4" question-id="4" position="0 -4 0.02">
+          <a-plane width="12" height="2.5" color="#EEE" opacity="0.8"></a-plane>
+          <a-text value="¿Que representa la energia cinetica?" align="center" width="15" color="#000" position="0 0 0.01"></a-text>
+        </a-entity>
+
+        <a-entity id="opcionSalir" question-id="exit" position="0 -7 0.02">
+          <a-plane width="12" height="2.5" color="#DDD" opacity="0.8"></a-plane>
+          <a-text value="Esta bien, gracias Inge" align="center" width="15" color="#666" position="0 0 0.01"></a-text>
+        </a-entity>
+      </a-entity>
+        <!-- MESAS-->
+         <a-entity
+         gltf-model="#modelomesa" 
+         scale="9 5 8"
+         position="0.759 -5.366 -2">
+         </a-entity>
+         <a-entity
+         gltf-model="#modelomesa" 
+         scale="9 5 8"
+         position="0.759 -5.263 -26.163">
+         </a-entity>
+         <a-entity
+         gltf-model="#modelomesa" 
+         scale="9 5 8"
+         position="0.759 -5.263 -53.931">
+         </a-entity>
+         <a-entity
+         gltf-model="#modelomesa" 
+         scale="9 5 8"
+         position="46.643 -5.263 -2">
+         </a-entity>
+         <a-entity
+         gltf-model="#modelomesa" 
+         scale="9 5 8"
+         position="46.643 -5.263 -53.931">
+         </a-entity>
+         <a-entity
+         gltf-model="#modelomesa" 
+         scale="9 5 8"
+         position="46.643 -5.263 -26.163">
+         </a-entity>
+         <!-- barraroja-->
+        <a-box
+        color="#F63030"
+        width="12"
+        height="0.6"
+        depth="0.6"
+        position="0 -2.1 -2"
+        >
+        </a-box>
+        <a-box
+        color="#111111"
+        width="12"
+        height="0.61"
+        depth="0.61"
+        position="0 -2.1 -2"
+        wireframe="true"
+        >
+        </a-box> 
+        <!-- cajitasblancascon borde negro-->
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="-5.5 -2.6 -2"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="-5.5 -2.6 -2">
+        </a-box>
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="5.5 -2.6 -2"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="5.5 -2.6 -2">
+        </a-box>
+         <!-- barraroja-->
+        <a-box
+        color="#F63030"
+        width="12"
+        height="0.6"
+        depth="0.6"
+        position="0 -2.1 -26.030"
+        >
+        </a-box>
+        <a-box
+        color="#111111"
+        width="12"
+        height="0.61"
+        depth="0.61"
+        position="0 -2.1 -26.030"
+        wireframe="true"
+        >
+        </a-box> 
+        <!-- cajitasblancascon borde negro-->
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="-5.5 -2.6 -26.030"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="-5.5 -2.6 -26.030">
+        </a-box>
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="5.5 -2.6 -26.030"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="5.5 -2.6 -26.030">
+        </a-box>
+        <!-- barraroja-->
+        <a-box
+        color="#F63030"
+        width="12"
+        height="0.6"
+        depth="0.6"
+        position="46.767 -2.1 -2"
+        >
+        </a-box>
+        <a-box
+        color="#111111"
+        width="12"
+        height="0.61"
+        depth="0.61"
+        position="46.767 -2.1 -2"
+        wireframe="true"
+        >
+        </a-box> 
+        <!-- cajitasblancascon borde negro-->
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="41.4 -2.6 -2"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="41.4 -2.6 -2">
+        </a-box>
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="52.4 -2.6 -2"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="52.4 -2.6 -2">
+        </a-box>
+        <!-- barraroja-->
+        <a-box
+        color="#F63030"
+        width="12"
+        height="0.6"
+        depth="0.6"
+        position="46.767 -2.1 -26.030"
+        >
+        </a-box>
+        <a-box
+        color="#111111"
+        width="12"
+        height="0.61"
+        depth="0.61"
+        position="46.767 -2.1 -26.030"
+        wireframe="true"
+        >
+        </a-box> 
+        <!-- cajitasblancascon borde negro-->
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="41.4 -2.6 -26.030"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="41.4 -2.6 -26.030">
+        </a-box>
+        <a-box
+        color="#000000"
+        width="0.41"
+        height="0.41"
+        depth="0.41"
+        position="52.4 -2.6 -26.030"
+        wireframe="true">
+        </a-box>
+        <a-box
+        color="#cdcdcd"
+        width="0.4"
+        height="0.4"
+        depth="0.4"
+        position="52.4 -2.6 -26.030">
+        </a-box>
+
+        <!-- plataforma MRU-->
+        <a-entity 
+        gltf-model="#modeloriel" 
+        rotation="0 -180 0"
+        position="0 -1.2 -2" 
+        scale="2.1 2.1 2.1"></a-entity>
+        <a-entity 
+        gltf-model="#modeloriel" 
+        rotation="0 -180 0"
+        position="0 -1.2 -26.030" 
+        scale="2.1 2.1 2.1"></a-entity>
+        <a-entity 
+        gltf-model="#modeloriel" 
+        rotation="0 -180 0"
+        position="46.767 -1.2 -2" 
+        scale="2.1 2.1 2.1"></a-entity>
+        <a-entity 
+        gltf-model="#modeloriel" 
+        rotation="0 -180 0"
+        position="46.767 -1.2 -26.030" 
+        scale="2.1 2.1 2.1"></a-entity>
+        <!-- estante 1-->
+        <a-entity 
+        gltf-model="#estante" 
+        rotation="0 -90 0"
+        position="98.692 -7 0" 
+        scale="1 0.7 1"></a-entity>
+        <!-- estante 2-->
+        <a-entity 
+        gltf-model="#estante" 
+        rotation="0 -90 0"
+        position="98.692 -7 -25" 
+        scale="1 0.7 1"></a-entity>
+        <!-- estante 3-->
+        <a-entity 
+        gltf-model="#estante" 
+        rotation="0 -90 0"
+        position="98.692 -7 -50" 
+        scale="1 0.7 1"></a-entity>
+        <!-- estante 4-->
+        <a-entity 
+        gltf-model="#estante" 
+        rotation="0 -90 0"
+        position="98.692 -7 -75" 
+        scale="1 0.7 1"></a-entity>
+        <!-- componentes-->
+        <a-entity 
+         class="interactable"
+         gltf-model="#componentes1"
+         position="76.005 0 1"
+         scale="2 2 2">
+         </a-entity>
+        <a-entity
+         class="interactable" 
+         gltf-model="#componentes1"
+         position="76.005 0 -2"
+         scale="2 2 2">
+         </a-entity>
+         <a-entity 
+         class="interactable"
+         gltf-model="#componentes2"
+         position="76.005 0 5"
+         scale="2 2 2">
+         </a-entity>
+        <a-entity 
+         class="interactable"
+         gltf-model="#componentes2"
+         position="76.005 0 8"
+         scale="2 2 2">
+         </a-entity>
+
+        <!-- ventana-->
+        <a-entity 
+        gltf-model="#ventana" 
+        rotation="-180 0 0"
+        position="0 15 -90" 
+        scale="6 7 7"></a-entity>
+        <!-- ventana2-->
+        <a-entity 
+        gltf-model="#ventana" 
+        rotation="-180 0 0"
+        position="20 15 -90" 
+        scale="6 7 7"></a-entity>
+        <!-- ventana3-->
+        <a-entity 
+        gltf-model="#ventana" 
+        rotation="-180 0 0"
+        position="40 15 -90" 
+        scale="5 7 7"></a-entity>
+        <!-- ventana3-->
+        <a-entity 
+        gltf-model="#ventana" 
+        rotation="-180 0 0"
+        position="49 15 -90" 
+        scale="5 7 7">
+        </a-entity>
+
+        <!-- maquina de aire MRU-->
+        <a-entity 
+        id="maquinaaire"
+        gltf-model="#modelomaquina" 
+        position="-5.6 -1.5 0" 
+        scale="1.5 2.3 2.3">
+        </a-entity>
+        <a-box color="#502c20"
+        width="2"
+        height="0.4"
+        depth="2"position="-5.6 -2.5 0" >
+        </a-box>     
+        
+        <!-- CARRITO 1 (izquierda) -->
+        <a-entity 
+        id="carrito1"
+        gltf-model="#modelocarrito" 
+        position="-4 -1 -1.5" 
+        scale="0.55 0.55 0.55"
+        rotation="0 90 0"
+        class="interactable"
+        ></a-entity>
+        
+        <!-- CARRITO 2 (derecha) -->
+        <a-entity 
+        id="carrito2"
+        gltf-model="#modelocarrito" 
+        position="4 -1 -2.5" 
+        scale="0.55 0.55 0.55"
+        rotation="0 -90 0"
+        class="interactable"
+        ></a-entity>
+
+        <a-entity id="vernier" position="2 -2.5 1">
+            <a-entity 
+            gltf-model="#modelo-vernier" 
+            rotation="0 270 0"
+            scale="1 1 1"></a-entity>
+            <a-plane 
+            id="pantalla" 
+            width="0.5" 
+            height="0.25" 
+            position="0 0 0.143" 
+            color="#222">
+            <a-text 
+                id="resultado-texto" 
+                value="Listo para simular" 
+                align="center" 
+                color="lime" 
+                width="0.8"
+                position="0 0 0.01">
+            </a-text>
+            </a-plane>
+        </a-entity>
+        
+        <!-- PIZARRÓN -->
+        <a-entity id="pizarron" position="30.291 6 29.5" rotation="-180 0 180">
+            <a-plane width="25" height="15" color="#919191"></a-plane>
+            <a-text id="pizarron-titulo" value="Resultados de Colision Elastica" color="#000000" position="0.5 6 0.02" align="center" width="23"></a-text>
+            <a-text id="linea1" value="Velocidad inicial C1: -- m/s | Masa C1: -- kg" color="#000000" position="-11 4.5 0.02" width="18"></a-text>
+            <a-text id="linea2" value="Velocidad inicial C2: -- m/s | Masa C2: -- kg" color="#000000" position="-11 3.5 0.02" width="18"></a-text>
+            <a-text id="linea3" value="Velocidad final C1: -- m/s" color="#0066cc" position="-11 2.3 0.02" width="18"></a-text>
+            <a-text id="linea4" value="Velocidad final C2: -- m/s" color="#0066cc" position="-11 1.3 0.02" width="18"></a-text>
+            <a-text id="linea5" value="Energia cinetica inicial: -- J" color="#cc6600" position="-11 0.1 0.02" width="18"></a-text>
+            <a-text id="linea6" value="Energia cinetica final: -- J" color="#cc6600" position="-11 -0.9 0.02" width="18"></a-text>
+            <a-text id="linea7" value="Momento inicial: -- kg·m/s" color="#006633" position="-11 -2.1 0.02" width="18"></a-text>
+            <a-text id="linea8" value="Momento final: -- kg·m/s" color="#006633" position="-11 -3.1 0.02" width="18"></a-text>
+        </a-entity>
+        <a-image id="grafico-colision" position="23.738 6 29.2" width="10" height="8" rotation="-180 0 180"></a-image>
+        <a-box
+        color="#502c20"
+        width="0.71"
+        height="15"
+        depth="0.71"
+        position="43.204 6 29.5"
+        ></a-box>
+        <a-box
+        color="#502c20"
+        width="0.71"
+        height="15"
+        depth="0.71"
+        position="17.792 6 29.5"
+        ></a-box>
+        <a-box
+        color="#502c20"
+        width="0.71"
+        height="25.5"
+        depth="0.71"
+        position="30.689 -1.5 29.5"
+        rotation="-90 -90 0"
+        ></a-box>
+        <a-box
+        color="#502c20"
+        width="0.71"
+        height="25.5"
+        depth="0.71"
+        position="30.689 13.5 29.5"
+        rotation="-90 -90 0"
+        ></a-box>
+        
+        <!-- Botones -->
+        <a-box id="boton-encender" position="-5 -1.5 0" width="0.5" height="0.5" rotation ="0 90 0" depth="0.5" color="#4CC3D9"></a-box>
+        <a-box id="boton-reiniciar" position="-17.1 2 -4" width="3" height="3" rotation="0 270 0" depth="0.5" color="#FFCC00"></a-box>
+        <a-text value="Reiniciar" position="-17.1 0 -4" align="center" rotation="0 -270 0" color="black" width="10"></a-text>
+        <a-box id="boton-detener" position="-17.1 2 2" width="3" height="3" rotation="0 270 0" depth="0.5" color="#FF6666"></a-box>
+        <a-text value="Detener" position="-17.1 0 2" align="center" rotation="0 -270 0" color="black" width="10"></a-text>
+
+        <!-- Scripts -->
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- ELEMENTOS DOM ---
+            const carrito1 = document.querySelector('#carrito1');
+            const carrito2 = document.querySelector('#carrito2');
+            const resultadoTexto = document.querySelector('#resultado-texto');
+            const linea1 = document.querySelector('#linea1');
+            const linea2 = document.querySelector('#linea2');
+            const linea3 = document.querySelector('#linea3');
+            const linea4 = document.querySelector('#linea4');
+            const linea5 = document.querySelector('#linea5');
+            const linea6 = document.querySelector('#linea6');
+            const linea7 = document.querySelector('#linea7');
+            const linea8 = document.querySelector('#linea8');
+
+            const botonEncender = document.querySelector('#boton-encender');
+            const botonDetener = document.querySelector('#boton-detener');
+            const botonReiniciar = document.querySelector('#boton-reiniciar');
+            const botonDescargar = document.querySelector('#boton-descargar');
+            
+            const inputV1 = document.querySelector('#v1-input');
+            const inputM1 = document.querySelector('#m1-input');
+            const inputV2 = document.querySelector('#v2-input');
+            const inputM2 = document.querySelector('#m2-input');
+
+            let animacionActiva = false;
+            let datosSimulacion = null;
+
+            const posInicialC1 = -4;
+            const posInicialC2 = 4.5;
+            const puntoColision = 0.25; // punto medio aproximado
+
+            function limpiarAnimaciones() {
+                carrito1.removeAttribute('animation');
+                carrito2.removeAttribute('animation');
+            }
+
+            function calcularColisionElastica(m1, v1, m2, v2) {
+                // Fórmulas de colisión elástica
+                const v1f = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2);
+                const v2f = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2);
+                
+                const ecInicial = 0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2;
+                const ecFinal = 0.5 * m1 * v1f * v1f + 0.5 * m2 * v2f * v2f;
+                
+                const pInicial = m1 * v1 + m2 * v2;
+                const pFinal = m1 * v1f + m2 * v2f;
+                
+                return { v1f, v2f, ecInicial, ecFinal, pInicial, pFinal };
+            }
+
+            // --- BOTÓN ENCENDER ---
+            botonEncender.addEventListener('click', () => {
+                if(animacionActiva) return;
+
+                const v1 = parseFloat(inputV1.value);
+                const m1 = parseFloat(inputM1.value);
+                const v2 = parseFloat(inputV2.value);
+                const m2 = parseFloat(inputM2.value);
+
+                if(isNaN(v1) || isNaN(m1) || isNaN(v2) || isNaN(m2) || m1 <= 0 || m2 <= 0){
+                    alert("Por favor introduce valores válidos. Las masas deben ser mayores a 0.");
+                    return;
+                }
+
+                animacionActiva = true;
+                carrito1.setAttribute('position', `${posInicialC1} -1 -1.5`);
+                carrito2.setAttribute('position', `${posInicialC2} -1 -1.5`);
+
+                // Calcular colisión
+                const resultado = calcularColisionElastica(m1, v1, m2, v2);
+                datosSimulacion = { m1, v1, m2, v2, ...resultado };
+
+                // Calcular tiempos hasta colisión
+                const distC1 = Math.abs(puntoColision - posInicialC1);
+                const distC2 = Math.abs(posInicialC2 - puntoColision);
+                const tiempoC1 = distC1 / Math.abs(v1);
+                const tiempoC2 = distC2 / Math.abs(v2);
+                const tiempoColision = Math.max(tiempoC1, tiempoC2) * 1000;
+
+                // Animación ida (hacia colisión)
+                carrito1.setAttribute('animation', {
+                    property: 'position',
+                    to: `${puntoColision} -1 -1.5`,
+                    dur: tiempoColision,
+                    easing: 'linear'
+                });
+
+                carrito2.setAttribute('animation', {
+                    property: 'position',
+                    to: `${puntoColision} -1 -2.5`,
+                    dur: tiempoColision,
+                    easing: 'linear'
+                });
+
+                resultadoTexto.setAttribute('value', 'Simulando colision...');
+
+                // Después de la colisión, regresar
+                setTimeout(() => {
+                    const distRetornoC1 = Math.abs(posInicialC1 - puntoColision);
+                    const distRetornoC2 = Math.abs(posInicialC2 - puntoColision);
+                    const tiempoRetornoC1 = (distRetornoC1 / Math.abs(resultado.v1f)) * 1000;
+                    const tiempoRetornoC2 = (distRetornoC2 / Math.abs(resultado.v2f)) * 1000;
+
+                    carrito1.setAttribute('animation', {
+                        property: 'position',
+                        to: `${posInicialC1} -1 -1.5`,
+                        dur: tiempoRetornoC1,
+                        easing: 'linear'
+                    });
+
+                    carrito2.setAttribute('animation', {
+                        property: 'position',
+                        to: `${posInicialC2} -1 -2.5`,
+                        dur: tiempoRetornoC2,
+                        easing: 'linear'
+                    });
+
+                    // Mostrar resultados
+                    resultadoTexto.setAttribute('value', 'Colision completada');
+                    linea1.setAttribute('value', `Velocidad inicial C1: ${v1.toFixed(2)} m/s | Masa C1: ${m1.toFixed(2)} kg`);
+                    linea2.setAttribute('value', `Velocidad inicial C2: ${v2.toFixed(2)} m/s | Masa C2: ${m2.toFixed(2)} kg`);
+                    linea3.setAttribute('value', `Velocidad final C1: ${resultado.v1f.toFixed(2)} m/s`);
+                    linea4.setAttribute('value', `Velocidad final C2: ${resultado.v2f.toFixed(2)} m/s`);
+                    linea5.setAttribute('value', `Energia cinetica inicial: ${resultado.ecInicial.toFixed(2)} J`);
+                    linea6.setAttribute('value', `Energia cinetica final: ${resultado.ecFinal.toFixed(2)} J`);
+                    linea7.setAttribute('value', `Momento inicial: ${resultado.pInicial.toFixed(2)} kg·m/s`);
+                    linea8.setAttribute('value', `Momento final: ${resultado.pFinal.toFixed(2)} kg·m/s`);
+
+                    dibujarGraficoColision(v1, v2, resultado.v1f, resultado.v2f, tiempoColision / 1000);
+                    
+                    // Mostrar botón de descarga
+                    botonDescargar.style.display = 'block';
+
+                    setTimeout(() => {
+                        animacionActiva = false;
+                    }, Math.max(tiempoRetornoC1, tiempoRetornoC2));
+
+                }, tiempoColision);
+            });
+
+            // --- BOTÓN DETENER ---
+            botonDetener.addEventListener('click', () => {
+                limpiarAnimaciones();
+                animacionActiva = false;
+                resultadoTexto.setAttribute('value', 'Simulacion detenida');
+            });
+
+            // --- BOTÓN REINICIAR ---
+            botonReiniciar.addEventListener('click', () => {
+                limpiarAnimaciones();
+                carrito1.setAttribute('position', `${posInicialC1} -1 -1.5`);
+                carrito2.setAttribute('position', `${posInicialC2} -1 -1.5`);
+                animacionActiva = false;
+                datosSimulacion = null;
+                botonDescargar.style.display = 'none';
+                
+                resultadoTexto.setAttribute('value', 'Listo para simular');
+                linea1.setAttribute('value', 'Velocidad inicial C1: -- m/s | Masa C1: -- kg');
+                linea2.setAttribute('value', 'Velocidad inicial C2: -- m/s | Masa C2: -- kg');
+                linea3.setAttribute('value', 'Velocidad final C1: -- m/s');
+                linea4.setAttribute('value', 'Velocidad final C2: -- m/s');
+                linea5.setAttribute('value', 'Energia cinetica inicial: -- J');
+                linea6.setAttribute('value', 'Energia cinetica final: -- J');
+                linea7.setAttribute('value', 'Momento inicial: -- kg·m/s');
+                linea8.setAttribute('value', 'Momento final: -- kg·m/s');
+            });
+
+            // --- BOTÓN DESCARGAR EXCEL ---
+            botonDescargar.addEventListener('click', () => {
+                if (!datosSimulacion) {
+                    alert('No hay datos para exportar. Ejecuta la simulación primero.');
+                    return;
+                }
+                
+                // Verificar que ExcelJS esté cargado
+                if (typeof generarExcelAvanzado === 'function') {
+                    generarExcelAvanzado(datosSimulacion);
+                } else {
+                    alert('Error: El módulo de exportación no está disponible.');
+                }
+            });
+            // --- GRÁFICO DE COLISIÓN ---
+            function dibujarGraficoColision(v1i, v2i, v1f, v2f, tiempoColision) {
+                const canvas = document.getElementById('grafico');
+                const ctx = canvas.getContext('2d');
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Ejes
+                ctx.beginPath();
+                ctx.moveTo(40, 150);
+                ctx.lineTo(380, 150);
+                ctx.moveTo(200, 20);
+                ctx.lineTo(200, 280);
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Etiquetas
+                ctx.fillStyle = '#000';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Tiempo (s)', 210, 290);
+                ctx.save();
+                ctx.translate(15, 150);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillText('Velocidad (m/s)', 0, 0);
+                ctx.restore();
+
+                // Escala
+                const maxV = Math.max(Math.abs(v1i), Math.abs(v2i), Math.abs(v1f), Math.abs(v2f)) * 1.2;
+                const escalaY = 120 / maxV;
+                const escalaX = 160 / (tiempoColision * 2);
+
+                // Línea carrito 1
+                ctx.beginPath();
+                ctx.moveTo(40, 150 - v1i * escalaY);
+                ctx.lineTo(200, 150 - v1i * escalaY);
+                ctx.lineTo(200, 150 - v1f * escalaY);
+                ctx.lineTo(360, 150 - v1f * escalaY);
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Línea carrito 2
+                ctx.beginPath();
+                ctx.moveTo(40, 150 - v2i * escalaY);
+                ctx.lineTo(200, 150 - v2i * escalaY);
+                ctx.lineTo(200, 150 - v2f * escalaY);
+                ctx.lineTo(360, 150 - v2f * escalaY);
+                ctx.strokeStyle = '#0000ff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Línea de colisión
+                ctx.beginPath();
+                ctx.moveTo(200, 20);
+                ctx.lineTo(200, 280);
+                ctx.strokeStyle = '#00aa00';
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Leyenda
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(250, 30, 20, 3);
+                ctx.fillStyle = '#000';
+                ctx.font = '11px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('Carrito 1', 275, 33);
+
+                ctx.fillStyle = '#0000ff';
+                ctx.fillRect(250, 50, 20, 3);
+                ctx.fillStyle = '#000';
+                ctx.fillText('Carrito 2', 275, 53);
+
+                const image = document.getElementById('grafico-colision');
+                if(image) image.setAttribute('src', canvas.toDataURL());
+            }
+
+            // --- ARRASTRE MODELOS GLTF ---
+            const scene = document.querySelector('a-scene');
+            const camera = scene.querySelector('[camera]');
+            const interactables = document.querySelectorAll('.interactable');
+
+            let grabbedEl = null;
+            let offset = new THREE.Vector3();
+            let plane = new THREE.Plane();
+            let raycaster = new THREE.Raycaster();
+            let mouse = new THREE.Vector2();
+            let interactableMeshes = [];
+
+            interactables.forEach(el => {
+                el.addEventListener('model-loaded', () => {
+                    el.object3D.traverse(node => {
+                        if(node.isMesh){
+                            node.el = el;
+                            interactableMeshes.push(node);
+                        }
+                    });
+                });
+            });
+
+            window.addEventListener('mousedown', e => {
+                if(e.button !== 0) return;
+
+                mouse.x = (e.clientX / window.innerWidth)*2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight)*2 + 1;
+
+                raycaster.setFromCamera(mouse, camera.getObject3D('camera'));
+
+                const intersects = raycaster.intersectObjects(interactableMeshes, true);
+                if(intersects.length > 0){
+                    grabbedEl = intersects[0].object.el;
+
+                    plane.setFromNormalAndCoplanarPoint(
+                        new THREE.Vector3(0,0,1).applyQuaternion(camera.object3D.quaternion),
+                        intersects[0].point
+                    );
+
+                    offset.copy(intersects[0].point).sub(grabbedEl.object3D.position);
+                }
+            });
+
+            window.addEventListener('mouseup', e => {
+                if(e.button !== 0) return;
+                grabbedEl = null;
+            });
+
+            window.addEventListener('mousemove', e => {
+                if(!grabbedEl) return;
+
+                mouse.x = (e.clientX / window.innerWidth)*2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight)*2 + 1;
+
+                raycaster.setFromCamera(mouse, camera.getObject3D('camera'));
+
+                const intersectionPoint = new THREE.Vector3();
+                raycaster.ray.intersectPlane(plane, intersectionPoint);
+
+                if(intersectionPoint){
+                    grabbedEl.object3D.position.copy(intersectionPoint.sub(offset));
+                }
+            });
+        });
+        </script>
+
+        <script>
+        // SECCIÓN AVATAR DOCENTE
+        const botonDocente = document.querySelector('#boton-docente');
+        const panelPreguntas = document.querySelector('#panel-preguntas');
+        const textoDialogo = document.querySelector('#texto-dialogo');
+
+        const respuestas = {
+            "1": "Es una colision donde se conservan tanto el momento como la energia cinetica del sistema.",
+            "2": "Se conservan el momento lineal y la energia cinetica total del sistema.",
+            "3": "Se usan las formulas: v1f = ((m1-m2)v1 + 2m2v2)/(m1+m2) y v2f = ((m2-m1)v2 + 2m1v1)/(m1+m2)",
+            "4": "Es la energia asociada al movimiento: EC = (1/2)mv²",
+        };
+
+        const despedidas = [
+            "Muy bien, continua con el experimento.",
+            "Listo, seguimos luego.",
+            "Hasta luego, buen trabajo."
+        ];
+
+        botonDocente.addEventListener('click', () => {
+            panelPreguntas.setAttribute('visible', true);
+            textoDialogo.setAttribute('value', "Hola, ¿que deseas saber?");
+        });
+
+        ['opcion1', 'opcion2', 'opcion3', 'opcion4', 'opcionSalir'].forEach(id => {
+            const opcion = document.querySelector(`#${id}`);
+            const questionId = opcion.getAttribute('question-id');
+
+            opcion.addEventListener('click', () => {
+                if (questionId === 'exit') {
+                    const despedida = despedidas[Math.floor(Math.random() * despedidas.length)];
+                    textoDialogo.setAttribute('value', despedida);
+                    setTimeout(() => panelPreguntas.setAttribute('visible', false), 1500);
+                } else {
+                    textoDialogo.setAttribute('value', respuestas[questionId]);
+                }
+            });
+        });
+        </script>
+
+        <!-- Cámara con cursor -->
+        <a-entity position="0 1.6 0">
+            <a-entity 
+                camera 
+                look-controls 
+                wasd-controls 
+                position="0 0 0">
+                <a-cursor></a-cursor>
+            </a-entity>
+        </a-entity>
+
+        <!-- Escenario-->
+        <a-light type="ambient" color="#FFFFFF" intensity="0.6"></a-light>
+        <a-light type="directional" color="#FFFFFF" intensity="1.5" position="0 -6 -6"></a-light>
+        <a-light type="directional" color="#FFFFFF" intensity="0.5" position="0 10 10"></a-light>
+        <a-sky color="#ddddff"></a-sky>
+        
+    </a-scene>
+    
+</body>
+</html>
